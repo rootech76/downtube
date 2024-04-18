@@ -1,0 +1,78 @@
+#!/bin/bash
+# ES OBLIGATORIO TENER INSTALADO youtube-dl
+# Este script limpia el nombre de las descargas realizadas por youtube-dl
+#
+# CONDICIONAR A QUE SEAN PASADOS 2 PARÁMETROS OBLIGATORIAMENTE
+#
+if [ $# -lt 2 ]; then
+    echo "Es necesario pasar acción y URL"
+    exit 1
+fi
+
+# EXTRAER LA RUTA DEL URL
+regex="^(https?:\/\/[^\/]+)?(\/[^\?]+)"
+
+# Comprobar si la URL coincide con la expresión regular
+if [[ $2 =~ $regex ]]; then
+    # Almacenar la ruta capturada en una variable
+    ruta=${BASH_REMATCH[2]}
+    ruta_mod=${BASH_REMATCH[2]//\//-}
+else
+    echo "La URL proporcionada no tiene una ruta válida."
+fi
+
+while getopts ":av:" opt; do
+    case ${opt} in
+        a )
+            echo "Opción -a pasada, realizando una acción..."
+            # Aquí puedes agregar la acción que deseas realizar cuando se pasa -a
+            echo "Iniciando la descarga del audio: "
+            youtube-dl --extract-audio --audio-format mp3 $2
+            ruta="${ruta:1}"
+
+            echo "El archivo descargado fue: "
+
+            archivo=$(find . -type f -name "*$ruta*")
+
+            nombre_archivo="${archivo##*/}"
+
+            echo "$nombre_archivo"
+
+            nuevo_nombre=$(echo "$nombre_archivo" | sed "s/$ruta_mod//")
+
+            mv "$nombre_archivo" "$nuevo_nombre"
+
+            echo "fue descargado: "
+            echo " "
+            echo "$nuevo_nombre"
+            ;;
+        v )
+            echo "Opción -v pasada, realizando otra acción..."
+            # Aquí puedes agregar la acción que deseas realizar cuando se pasa -v
+            echo "Iniciando la descarga: "
+            youtube-dl -f mp4 $2
+            ruta="${ruta:1}"
+
+            echo "El archivo descargado fue: "
+
+            archivo=$(find . -type f -name "*$ruta*")
+
+            nombre_archivo="${archivo##*/}"
+
+            echo "$nombre_archivo"
+            nuevo_nombre=$(echo "$nombre_archivo" | sed "s/$ruta_mod//")
+
+            mv "$nombre_archivo" "$nuevo_nombre"
+
+            echo "fue descargado: "
+            echo " "
+            echo "$nuevo_nombre"
+            ;;
+        \? )
+            echo "Opción inválida: -$OPTARG" 1>&2
+            ;;
+        : )
+            echo "La opción -$OPTARG requiere un argumento." 1>&2
+            ;;
+    esac
+done
